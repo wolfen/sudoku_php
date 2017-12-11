@@ -1,7 +1,7 @@
 # sudoku_php
-PHP implementation of approach described by Peter Norvig
+PHP implementation of solution described by Peter Norvig
 
-Note that Norvig's extremely lucid human-readable exposition and Python implementation are published here:
+Norvig's extremely lucid exposition and Python implementation are published here:
 
         http://norvig.com/sudoku.html
 
