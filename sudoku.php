@@ -7,6 +7,11 @@
  * Note that comments, tests, and notes have been added with the goal
  * of making this PHP version as easy to understand as the original.
  *
+ * Usage Examples:
+ * $ echo '1.....7.9.4...72..8.........7..1..6.3.......5.6..4..2.........8..53...7.7.2....46' | php sudoku.php
+ * $ curl 'http://norvig.com/top95.txt' > norvig.sudoku.hard.txt
+ * $ php sudoku.php < norvig.sudoku.hard.txt
+ *
  * @author Peter Wolfenden <wolfen@gmail.com>
  */
 
@@ -550,7 +555,7 @@ function search($values) {
     }
   }
   if ($solved) {
-    return $values;
+    return $values; // found a solution
   }
 
   // Try filling the unfilled square with fewest possible choices:
@@ -560,7 +565,7 @@ function search($values) {
       if (assign($values2, $unsolved_min_square, $v)) {
         $r = search($values2);
         if ($r != false) {
-          return $r;
+          return $r; // found a solution
         }
       }
     }
@@ -592,13 +597,66 @@ function test_search_and_solve() {
   $s = solve($g);
   assert($s != false);
   assert(display_line($s, true) == '417369825632158947958724316825437169791586432346912758289643571573291684164875293');
+
+  /** This takes 2.86 hours (10282.6 seconds) to fail (no solution):
+   * TODO: Figure out:
+   * - how deep the stack gets
+   * - how much memory is used
+   * - how much work is done
+   * - why the Python version is so much faster (only half and hour?)
+  $start = microtime(true);
+  $g2 = '.....5.8....6.1.43..........1.5........1.6...3.......553.....61........4.........';
+  $s2 = solve($g2);
+  $end = microtime(true);
+  print "Time Elapsed:  " . ($end - $start) . " sec\n"; // Time Elapsed:  10282.617163181 sec
+  assert($s2 == false); // No solution found
+   */
+
   pdebug("Test for solve() and search() passes.\n");
 }
 test_search_and_solve();
 
-/** Main **/
-$g = '1.....7.9.4...72..8.........7..1..6.3.......5.6..4..2.........8..53...7.7.2....46';
-print "Example from http://norvig.com/top95.txt:  $g\n";
-$s = solve($g, $PEERS);
-print "Solution: " . display_line($s, true) . "\n";
+/**
+ * Return the next line of STDOUT.
+ *
+ * Note that this is a PHP generator function as described here:
+ * https://stackoverflow.com/questions/11968244/reading-line-by-line-from-stdin
+ *
+ * @param void
+ * @return string
+ */
+function stdin_stream_line() {
+  while ($line = fgets(STDIN)) {
+    yield trim($line);
+  }
+}
 
+/**
+ * For each line of STDIN which is *not* a comment (starting with
+ * a hash symbol), treat it as a 9x9 Sudoku puzzle represented by
+ * 81 consecutive chars (no spaces), each of which is either a single
+ * digit or a period, and print the solution (if one exists) to STDOUT.
+ *
+ * @param void
+ * @return void
+ */
+function read_and_solve_lines() {
+  foreach (stdin_stream_line() as $line) {
+    if (strpos($line, '#') === 0) {
+      continue; // ignore comments
+    }
+    print "Puzzle:        $line\n";
+    $start = microtime(true);
+    $s = solve($line);
+    if ($s == false) {
+      print "No solution!\n";
+    } else {
+      print "Solution:      " . display_line($s, true) . "\n";
+    }
+    $end = microtime(true);
+    print "Time Elapsed:  " . ($end - $start) . " sec\n";
+  }
+}
+
+/** Main ***/
+read_and_solve_lines();
